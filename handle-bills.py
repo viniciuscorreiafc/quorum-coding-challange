@@ -2,21 +2,21 @@ import csv
 from enum import Enum
 from typing import TypeVar, Callable, Tuple, Dict, List
 
-T = TypeVar('T')
+T = TypeVar("T")
 
-def readCsv(filePath: str, constructor: Callable[..., T]) -> List[T]:
-  objects = []
-  with open(filePath, mode='r') as file:
+def read_csv(file_path: str, constructor: Callable[..., T]) -> List[T]:
+  instances = []
+  with open(file_path, mode="r") as file:
     reader = csv.DictReader(file)
     for row in reader:
-      constructedObject = constructor(row)
-      objects.append(constructedObject)
-  return objects
+      instance = constructor(**row)
+      instances.append(instance)
+  return instances
 
-def writeCsv(filename: str, data: List[Dict[str, str]]) -> None:
-  with open(filename, 'w', newline='') as csvfile:
+def write_csv(file_name: str, data: List[Dict[str, str]]) -> None:
+  with open(file_name, "w", newline="") as file:
     fieldnames = data[0].keys()
-    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+    writer = csv.DictWriter(file, fieldnames=fieldnames)
     writer.writeheader()
     for row in data:
       writer.writerow(row)
@@ -31,94 +31,94 @@ class Legislator:
     self.name = name
 
 class Bill:
-  def __init__(self, id: int, title: str, legislatorId: int):
+  def __init__(self, id: int, title: str, sponsor_id: int):
     self.id = id
     self.title = title
-    self.legislatorId = legislatorId
+    self.sponsor_id = sponsor_id
 
 class Vote:
-  def __init__(self, id: int, billId: int):
+  def __init__(self, id: int, bill_id: int):
     self.id = id
-    self.billId = billId
+    self.bill_id = bill_id
 
 class VoteResult:
-  def __init__(self, id: int, legislatorId: int, vote_id: int, voteType: int):
+  def __init__(self, id: int, legislator_id: int, vote_id: int, vote_type: int):
     self.id = id
     self.vote_id = vote_id
-    self.legislatorId = legislatorId
-    self.voteType = VoteType(int(voteType))
+    self.legislator_id = legislator_id
+    self.vote_type = VoteType(int(vote_type))
 
-def readCongressInstance() -> Tuple[List[Legislator], List[Bill], List[Vote], List[VoteResult]]:
-  legislators = readCsv('data-set/legislators.csv', lambda row: Legislator(row['id'], row['name']))
-  bills = readCsv('data-set/bills.csv', lambda row: Bill(row["id"], row["title"], row["sponsor_id"]))
-  votes = readCsv('data-set/votes.csv', lambda row: Vote(row["id"], row["bill_id"]))
-  voteResults = readCsv('data-set/vote_results.csv', lambda row: VoteResult(row["id"], row["legislator_id"], row["vote_id"], row["vote_type"]))
-  return legislators, bills, votes, voteResults
+def read_congress_instance() -> Tuple[List[Legislator], List[Bill], List[Vote], List[VoteResult]]:
+  legislators = read_csv("data-set/legislators.csv", Legislator)
+  bills = read_csv("data-set/bills.csv", Bill)
+  votes = read_csv("data-set/votes.csv", Vote)
+  vote_results = read_csv("data-set/vote_results.csv", VoteResult)
+  return legislators, bills, votes, vote_results
 
-def processLegislatorsInformation(legislators: List[Legislator], voteResults: List[VoteResult]) -> None:
-  voteResultsByLegislatorsIds: Dict[int, Dict[VoteType, int]] = {}
-  legislatorsVoteResults: List[Dict[str, int]] = []
+def process_legislators_information(legislators: List[Legislator], vote_results: List[VoteResult]) -> None:
+  vote_results_by_legislators_ids: Dict[int, Dict[VoteType, int]] = {}
+  legislators_vote_results: List[Dict[str, int]] = []
 
-  for voteResult in voteResults:
-    if voteResult.legislatorId not in voteResultsByLegislatorsIds:
-      voteResultsByLegislatorsIds[voteResult.legislatorId] = { VoteType.SUPPORTIVE: 0, VoteType.OPPOSITE: 0 }
-    voteResultsByLegislatorsIds[voteResult.legislatorId][voteResult.voteType] += 1
+  for vote_result in vote_results:
+    if vote_result.legislator_id not in vote_results_by_legislators_ids:
+      vote_results_by_legislators_ids[vote_result.legislator_id] = { VoteType.SUPPORTIVE: 0, VoteType.OPPOSITE: 0 }
+    vote_results_by_legislators_ids[vote_result.legislator_id][vote_result.vote_type] += 1
 
   for legislator in legislators:
-    supportedBills = voteResultsByLegislatorsIds[legislator.id][VoteType.SUPPORTIVE] if legislator.id in voteResultsByLegislatorsIds else 0
-    opposedBills = voteResultsByLegislatorsIds[legislator.id][VoteType.OPPOSITE] if legislator.id in voteResultsByLegislatorsIds else 0
+    supported_bills = vote_results_by_legislators_ids[legislator.id][VoteType.SUPPORTIVE] if legislator.id in vote_results_by_legislators_ids else 0
+    opposed_bills = vote_results_by_legislators_ids[legislator.id][VoteType.OPPOSITE] if legislator.id in vote_results_by_legislators_ids else 0
 
-    legislatorVoteResults = {
+    legislator_vote_results = {
       "id": legislator.id,
       "name": legislator.name,
-      "num_supported_bills": supportedBills,
-      "num_opposed_bills": opposedBills
+      "num_supported_bills": supported_bills,
+      "num_opposed_bills": opposed_bills
     }
-    legislatorsVoteResults.append(legislatorVoteResults)
+    legislators_vote_results.append(legislator_vote_results)
 
-  writeCsv("legislators-support-oppose-count.csv", legislatorsVoteResults)
+  write_csv("legislators-support-oppose-count.csv", legislators_vote_results)
 
-def processBillsInformation(legislators: List[Legislator], bills: List[Bill], votes: List[Vote], voteResults: List[VoteResult]) -> None:  
-  namesByLegislatorsIds: Dict[int, str] = {}
-  voteResultsByVoteIds: Dict[int, Dict[VoteType, int]] = {}
-  voteResultsByBillIds: Dict[int, Dict[VoteType, int]] = {}
-  billsVoteResults = []
+def process_bills_information(legislators: List[Legislator], bills: List[Bill], votes: List[Vote], vote_results: List[VoteResult]) -> None:  
+  names_by_legislators_ids: Dict[int, str] = {}
+  vote_results_by_vote_ids: Dict[int, Dict[VoteType, int]] = {}
+  vote_results_by_bill_ids: Dict[int, Dict[VoteType, int]] = {}
+  bills_vote_results = []
 
   for legislator in legislators:
-    namesByLegislatorsIds[legislator.id] = legislator.name
+    names_by_legislators_ids[legislator.id] = legislator.name
 
-  for voteResult in voteResults:
-    if voteResult.vote_id not in voteResultsByVoteIds:
-      voteResultsByVoteIds[voteResult.vote_id] = { VoteType.SUPPORTIVE: 0, VoteType.OPPOSITE: 0 }
-    voteResultsByVoteIds[voteResult.vote_id][voteResult.voteType] += 1
+  for vote_result in vote_results:
+    if vote_result.vote_id not in vote_results_by_vote_ids:
+      vote_results_by_vote_ids[vote_result.vote_id] = { VoteType.SUPPORTIVE: 0, VoteType.OPPOSITE: 0 }
+    vote_results_by_vote_ids[vote_result.vote_id][vote_result.vote_type] += 1
 
   for vote in votes:
-    if vote.id in voteResultsByVoteIds:
-      voteResultsByBillIds[vote.billId] = voteResultsByVoteIds[vote.id]
+    if vote.id in vote_results_by_vote_ids:
+      vote_results_by_bill_ids[vote.bill_id] = vote_results_by_vote_ids[vote.id]
     else:
-      voteResultsByBillIds[vote.billId] = { VoteType.SUPPORTIVE: 0, VoteType.OPPOSITE: 0 }
+      vote_results_by_bill_ids[vote.bill_id] = { VoteType.SUPPORTIVE: 0, VoteType.OPPOSITE: 0 }
 
   for bill in bills:
-    supportedVotes = voteResultsByBillIds[bill.id][VoteType.SUPPORTIVE] if bill.id in voteResultsByBillIds else 0
-    opposedVotes = voteResultsByBillIds[bill.id][VoteType.OPPOSITE] if bill.id in voteResultsByBillIds else 0
-    primarySponsorName = namesByLegislatorsIds[bill.legislatorId] if bill.legislatorId in namesByLegislatorsIds else "Sponsor not found"
+    supported_votes = vote_results_by_bill_ids[bill.id][VoteType.SUPPORTIVE] if bill.id in vote_results_by_bill_ids else 0
+    opposed_votes = vote_results_by_bill_ids[bill.id][VoteType.OPPOSITE] if bill.id in vote_results_by_bill_ids else 0
+    primary_sponsor_name = names_by_legislators_ids[bill.sponsor_id] if bill.sponsor_id in names_by_legislators_ids else "Sponsor not found"
 
-    billVoteResults = {
+    bill_vote_results = {
       "id": bill.id,
       "title": bill.title,
-      "supporter_count": supportedVotes,
-      "opposer_count": opposedVotes,
-      "primary_sponsor": primarySponsorName
+      "supporter_count": supported_votes,
+      "opposer_count": opposed_votes,
+      "primary_sponsor": primary_sponsor_name
     }
-    billsVoteResults.append(billVoteResults)
+    bills_vote_results.append(bill_vote_results)
 
-  writeCsv("bills.csv", billsVoteResults)
+  write_csv("bills.csv", bills_vote_results)
 
 def main():
-  legislators, bills, votes, voteResults = readCongressInstance()
-  processLegislatorsInformation(legislators, voteResults)
-  processBillsInformation(legislators, bills, votes, voteResults)
+  legislators, bills, votes, vote_results = read_congress_instance()
+  process_legislators_information(legislators, vote_results)
+  process_bills_information(legislators, bills, votes, vote_results)
 
-if __name__ == '__main__':
+if __name__ == "__main__":
   main()
     
