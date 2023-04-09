@@ -1,5 +1,8 @@
 import csv
 from enum import Enum
+from typing import TypeVar, Callable, List, Tuple
+
+T = TypeVar('T')
 
 class VoteType(Enum):
   supportive = 1
@@ -28,68 +31,32 @@ class VoteResult:
     self.legislatorId = legislatorId
     self.voteType = voteType
 
-def readLegislators(): 
-  legislators = []
-  with open('data-set/legislators.csv', mode='r') as legislatorsFile:
-    legislatorsReader = csv.DictReader(legislatorsFile)
-    count = 0
-    for row in legislatorsReader:
-        count += 1
-        if count == 0:
-            continue
-        lagislator = Legislator(row["id"], row["name"])
-        legislators.append(lagislator)
-  return legislators
+def readCsv(filePath: str, constructor: Callable[..., T]) -> List[T]:
+  objects = []
+  with open(filePath, mode='r') as file:
+    reader = csv.DictReader(file)
+    for row in reader:
+      object = constructor(row)
+      objects.append(object)
+  return objects
 
-def readBills(): 
-  bills = []
-  with open('data-set/bills.csv', mode='r') as billsFile:
-    billsReader = csv.DictReader(billsFile)
-    count = 0
-    for row in billsReader:
-        count += 1
-        if count == 0:
-            continue
-        bill = Bill(row["id"], row["title"], row["sponsor_id"])
-        bills.append(bill)
-  return bills
-
-def readVotes(): 
-  votes = []
-  with open('data-set/votes.csv', mode='r') as votesFile:
-    votesReader = csv.DictReader(votesFile)
-    count = 0
-    for row in votesReader:
-        count += 1
-        if count == 0:
-            continue
-        vote = Vote(row["id"], row["bill_id"])
-        votes.append(vote)
-  return votes
-
-def readVoteResults(): 
-  voteResults = []
-  with open('data-set/vote_results.csv', mode='r') as voteResultsFile:
-    voteResultsReader = csv.DictReader(voteResultsFile)
-    count = 0
-    for row in voteResultsReader:
-        count += 1
-        if count == 0:
-            continue
-        vote = VoteResult(row["id"], row["legislator_id"], row["vote_id"], row["vote_type"])
-        voteResults.append(vote)
-  return voteResults
-
-def readCongressInstance():
-  legislators = readLegislators()
-  bills = readBills()
-  votes = readVotes()
-  voteResults = readVoteResults()
+def readCongressInstance() -> Tuple[List[Legislator], List[Bill], List[Vote], List[VoteResult]]:
+  legislators = readCsv('data-set/legislators.csv', lambda row: Legislator(row['id'], row['name']))
+  bills = readCsv('data-set/bills.csv', lambda row: Bill(row["id"], row["title"], row["sponsor_id"]))
+  votes = readCsv('data-set/votes.csv', lambda row: Vote(row["id"], row["bill_id"]))
+  voteResults = readCsv('data-set/vote_results.csv', lambda row: VoteResult(row["id"], row["legislator_id"], row["vote_id"], row["vote_type"]))
   return legislators, bills, votes, voteResults
+
+def processLegislatorsInformation(legislators: List[Legislator], bills: List[Bill], votes: List[Vote], voteResults: List[VoteResult]):
+  print(legislators, bills, votes, voteResults)
+
+def processBillsInformation(legislators: List[Legislator], bills: List[Bill], votes: List[Vote], voteResults: List[VoteResult]):  
+  print(legislators, bills, votes, voteResults)
 
 def main():
   legislators, bills, votes, voteResults = readCongressInstance()
-  print(legislators, bills, votes, voteResults)
+  processLegislatorsInformation(legislators, bills, votes, voteResults)
+  processBillsInformation(legislators, bills, votes, voteResults)
 
 if __name__ == '__main__':
   main()
