@@ -9,8 +9,8 @@ def readCsv(filePath: str, constructor: Callable[..., T]) -> List[T]:
   with open(filePath, mode='r') as file:
     reader = csv.DictReader(file)
     for row in reader:
-      object = constructor(row)
-      objects.append(object)
+      constructedObject = constructor(row)
+      objects.append(constructedObject)
   return objects
 
 def writeCsv(filename: str, data: List[Dict[str, str]]) -> None:
@@ -22,8 +22,8 @@ def writeCsv(filename: str, data: List[Dict[str, str]]) -> None:
       writer.writerow(row)
 
 class VoteType(Enum):
-  supportive = 1
-  oppositive = 2
+  SUPPORTIVE = 1
+  OPPOSITIVE = 2
 
 class Legislator:
   def __init__(self, id: int, name: str):
@@ -61,12 +61,12 @@ def processLegislatorsInformation(legislators: List[Legislator], voteResults: Li
 
   for voteResult in voteResults:
     if voteResult.legislatorId not in voteResultsByLegislatorsIds:
-      voteResultsByLegislatorsIds[voteResult.legislatorId] = { VoteType.supportive: 0, VoteType.oppositive: 0 }
+      voteResultsByLegislatorsIds[voteResult.legislatorId] = { VoteType.SUPPORTIVE: 0, VoteType.OPPOSITIVE: 0 }
     voteResultsByLegislatorsIds[voteResult.legislatorId][voteResult.voteType] += 1
 
   for legislator in legislators:
-    supportedBills = voteResultsByLegislatorsIds[legislator.id][VoteType.supportive] if legislator.id in voteResultsByLegislatorsIds else 0
-    opposedBills = voteResultsByLegislatorsIds[legislator.id][VoteType.oppositive] if legislator.id in voteResultsByLegislatorsIds else 0
+    supportedBills = voteResultsByLegislatorsIds[legislator.id][VoteType.SUPPORTIVE] if legislator.id in voteResultsByLegislatorsIds else 0
+    opposedBills = voteResultsByLegislatorsIds[legislator.id][VoteType.OPPOSITIVE] if legislator.id in voteResultsByLegislatorsIds else 0
 
     legislatorVoteResults = {
       "id": legislator.id,
@@ -89,19 +89,19 @@ def processBillsInformation(legislators: List[Legislator], bills: List[Bill], vo
 
   for voteResult in voteResults:
     if voteResult.vote_id not in voteResultsByVoteIds:
-      voteResultsByVoteIds[voteResult.vote_id] = { VoteType.supportive: 0, VoteType.oppositive: 0 }
+      voteResultsByVoteIds[voteResult.vote_id] = { VoteType.SUPPORTIVE: 0, VoteType.OPPOSITIVE: 0 }
     voteResultsByVoteIds[voteResult.vote_id][voteResult.voteType] += 1
 
   for vote in votes:
     if vote.id in voteResultsByVoteIds:
       voteResultsByBillIds[vote.billId] = voteResultsByVoteIds[vote.id]
     else:
-      voteResultsByBillIds[vote.billId] = { VoteType.supportive: 0, VoteType.oppositive: 0 }
+      voteResultsByBillIds[vote.billId] = { VoteType.SUPPORTIVE: 0, VoteType.OPPOSITIVE: 0 }
 
   for bill in bills:
-    supportedVotes = voteResultsByBillIds[bill.id][VoteType.supportive] if bill.id in voteResultsByBillIds else 0
-    opposedVotes = voteResultsByBillIds[bill.id][VoteType.oppositive] if bill.id in voteResultsByBillIds else 0
-    primarySponsoName = namesByLagislatorsIds[bill.legislatorId] if bill.legislatorId in namesByLagislatorsIds else "Name not founded"
+    supportedVotes = voteResultsByBillIds[bill.id][VoteType.SUPPORTIVE] if bill.id in voteResultsByBillIds else 0
+    opposedVotes = voteResultsByBillIds[bill.id][VoteType.OPPOSITIVE] if bill.id in voteResultsByBillIds else 0
+    primarySponsoName = namesByLagislatorsIds[bill.legislatorId] if bill.legislatorId in namesByLagislatorsIds else "Name not found"
 
     billVoteResults = {
       "id": bill.id,
