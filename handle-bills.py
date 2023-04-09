@@ -42,9 +42,9 @@ class Vote:
     self.billId = billId
 
 class VoteResult:
-  def __init__(self, id: int, legislatorId: int, billId: int, voteType: int):
+  def __init__(self, id: int, legislatorId: int, vote_id: int, voteType: int):
     self.id = id
-    self.billId = billId
+    self.vote_id = vote_id
     self.legislatorId = legislatorId
     self.voteType = VoteType(int(voteType))
 
@@ -56,17 +56,17 @@ def readCongressInstance() -> Tuple[List[Legislator], List[Bill], List[Vote], Li
   return legislators, bills, votes, voteResults
 
 def processLegislatorsInformation(legislators: List[Legislator], voteResults: List[VoteResult]) -> None:
-  voteResultsByLegislators: Dict[int, Dict[VoteType, int]] = {}
+  voteResultsByLegislatorsIds: Dict[int, Dict[VoteType, int]] = {}
   legislatorsVoteResults: List[Dict[str, int]] = []
 
   for voteResult in voteResults:
-    if voteResult.legislatorId not in voteResultsByLegislators:
-      voteResultsByLegislators[voteResult.legislatorId] = { VoteType.supportive: 0, VoteType.oppositive: 0 }
-    voteResultsByLegislators[voteResult.legislatorId][voteResult.voteType] += 1
+    if voteResult.legislatorId not in voteResultsByLegislatorsIds:
+      voteResultsByLegislatorsIds[voteResult.legislatorId] = { VoteType.supportive: 0, VoteType.oppositive: 0 }
+    voteResultsByLegislatorsIds[voteResult.legislatorId][voteResult.voteType] += 1
 
   for legislator in legislators:
-    supportedBills = voteResultsByLegislators[legislator.id][VoteType.supportive] if legislator.id in voteResultsByLegislators else 0
-    opposedBills = voteResultsByLegislators[legislator.id][VoteType.oppositive] if legislator.id in voteResultsByLegislators else 0
+    supportedBills = voteResultsByLegislatorsIds[legislator.id][VoteType.supportive] if legislator.id in voteResultsByLegislatorsIds else 0
+    opposedBills = voteResultsByLegislatorsIds[legislator.id][VoteType.oppositive] if legislator.id in voteResultsByLegislatorsIds else 0
 
     legislatorVoteResults = {
       "id": legislator.id,
@@ -78,8 +78,41 @@ def processLegislatorsInformation(legislators: List[Legislator], voteResults: Li
 
   writeCsv("legislators-support-oppose-count.csv", legislatorsVoteResults)
 
-def processBillsInformation(legislators: List[Legislator], bills: List[Bill], votes: List[Vote], voteResults: List[VoteResult]):  
-  print(legislators, bills, votes, voteResults)
+def processBillsInformation(legislators: List[Legislator], bills: List[Bill], votes: List[Vote], voteResults: List[VoteResult]) -> None:  
+  namesByLagislatorsIds: Dict[int, str] = {}
+  voteResultsByVoteIds: Dict[int, Dict[VoteType, int]] = {}
+  voteResultsByBillIds: Dict[int, Dict[VoteType, int]] = {}
+  billsVoteResults = []
+
+  for legislator in legislators:
+    namesByLagislatorsIds[legislator.id] = legislator.name
+
+  for voteResult in voteResults:
+    if voteResult.vote_id not in voteResultsByVoteIds:
+      voteResultsByVoteIds[voteResult.vote_id] = { VoteType.supportive: 0, VoteType.oppositive: 0 }
+    voteResultsByVoteIds[voteResult.vote_id][voteResult.voteType] += 1
+
+  for vote in votes:
+    if vote.id in voteResultsByVoteIds:
+      voteResultsByBillIds[vote.billId] = voteResultsByVoteIds[vote.id]
+    else:
+      voteResultsByBillIds[vote.billId] = { VoteType.supportive: 0, VoteType.oppositive: 0 }
+
+  for bill in bills:
+    supportedVotes = voteResultsByBillIds[bill.id][VoteType.supportive] if bill.id in voteResultsByBillIds else 0
+    opposedVotes = voteResultsByBillIds[bill.id][VoteType.oppositive] if bill.id in voteResultsByBillIds else 0
+    primarySponsoName = namesByLagislatorsIds[bill.legislatorId] if bill.legislatorId in namesByLagislatorsIds else "Name not founded"
+
+    billVoteResults = {
+      "id": bill.id,
+      "title": bill.title,
+      "supporter_count": supportedVotes,
+      "opposer_count": opposedVotes,
+      "primary_sponsor": primarySponsoName
+    }
+    billsVoteResults.append(billVoteResults)
+
+  writeCsv("bills.csv", billsVoteResults)
 
 def main():
   legislators, bills, votes, voteResults = readCongressInstance()
