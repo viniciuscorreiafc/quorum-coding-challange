@@ -25,6 +25,8 @@ On the other hand, generating the "bill.csv" file requires separate iterations o
 
 The coding challenge description states that Quorum frequently handles a large volume of publicly available government data. Because of that I prioritized performance, and, therefore, I created extra dictionaries and arrays, which may increase the space used by the functions. However, the overall space complexity of the solution is O(b + l + v + r).
 
+That being said, considering the standard asymptotic complexity notation, the overall, both space and time, code complexity is O(n).
+
 ### How would you change your solution to account for future columns that might be requested, such as “Bill Voted On Date” or “Co-Sponsors”?
 
 If I were to add new columns to my data models, I would need to make changes to the csv generator functions. The extent of these changes would depend on how the new columns interact with the current logic and how they fit into the resulting CSV files.
